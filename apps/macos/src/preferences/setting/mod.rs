@@ -29,7 +29,10 @@ pub enum Setting {
     /// `[general] page_keys`，弹出菜单。
     PageKeys,
 
-    /// `[general] theme`，弹出菜单。
+    /// `[general] appearance`，弹出菜单。
+    Appearance,
+
+    /// `[general] theme`，弹出菜单，选项是内置主题。
     Theme,
 
     /// `[general] renderer`，弹出菜单：青简渲染器 / 系统绘制。
@@ -70,6 +73,9 @@ pub enum Setting {
 
     /// 默认中文标点模式。
     FullWidthPunctuation,
+
+    /// `[general] punct_commits`，勾选框：组句中会转全角的标点先把高亮候选上屏再补标点。
+    PunctCommits,
 
     /// 选择已有自定义短语。
     SelectPhrase,
@@ -119,11 +125,28 @@ pub enum Setting {
     /// `[general] chinese_first`，勾选框：中英混输时中文候选排在英文词前。
     ChineseFirst,
 
+    /// `[general] english_in_chinese`，勾选框：中文模式也给英文词与补全。
+    EnglishInChinese,
+
+    /// `[general] emoji`，勾选框：候选后面配 emoji。
+    Emoji,
     /// `[general] auto_space`，勾选框：中西文之间自动补空格。
     AutoSpace,
 
     /// `[general] horizontal_grid`，勾选框：横排时上 / 下键展开成多行矩阵。
     HorizontalGrid,
+
+    /// `[general] candidate_font_size`，文本框，空为用主题的。
+    CandidateFontSize,
+
+    /// `[general] annotation_font_size`，同上。
+    AnnotationFontSize,
+
+    /// `[general] animations`，勾选框。
+    Animations,
+
+    /// 两个字号都回到主题的。
+    ResetFontSizes,
 
     /// `[general] shift_letter`，勾选框：中文模式下 Shift+字母进组句（勾上是 compose，否则 passthrough）。
     ShiftLetter,
@@ -176,8 +199,8 @@ pub enum Setting {
     /// `[predict] slots`，弹出菜单 0–4：第一页末尾留给云端词的格数。
     CloudSlots,
 
-    /// `[apps] english_candidates_off`，勾选框：勾上写缺省的终端 / 编辑器列表，去掉写空表。
-    EnglishCandidatesOffInApps,
+    /// `[apps] english_candidates_on`，勾选框：勾上写缺省白名单，去掉写 `["*"]`（处处都给）。
+    EnglishCandidatesOnlyInApps,
 
     /// `[shortcut] delete_candidate`，快捷键录制按钮（只记修饰键）。
     DeleteCandidateKeys,
@@ -207,7 +230,7 @@ impl Setting {
             Self::LearningLanguage => 1,
             Self::PageSize => 2,
             Self::PageKeys => 3,
-            Self::Theme => 4,
+            Self::Appearance => 4,
             Self::ExpressionKey => 5,
             Self::QuestionKey => 6,
             Self::QuestionMark => 41,
@@ -220,9 +243,16 @@ impl Setting {
             Self::Preedit => 13,
             Self::EnglishCandidates => 14,
             Self::ChineseFirst => 42,
-            Self::AutoSpace => 57,
+            Self::Emoji => 62,
+            Self::EnglishInChinese => 63,
+            Self::AutoSpace => 65,
             Self::ShiftLetter => 50,
-            Self::HorizontalGrid => 51,
+            Self::Theme => 51,
+            Self::HorizontalGrid => 57,
+            Self::CandidateFontSize => 58,
+            Self::AnnotationFontSize => 59,
+            Self::Animations => 60,
+            Self::ResetFontSizes => 61,
             Self::TranslationKeys => 15,
             Self::TranslationSecondKeys => 16,
             Self::TranslateSelectionKeys => 17,
@@ -236,7 +266,7 @@ impl Setting {
             Self::CopyDiagnostics => 23,
             Self::ExportLogs => 48,
             Self::CloudSlots => 24,
-            Self::EnglishCandidatesOffInApps => 25,
+            Self::EnglishCandidatesOnlyInApps => 25,
             Self::DeleteCandidateKeys => 26,
             Self::InputLog => 27,
             Self::Learning => 45,
@@ -260,6 +290,7 @@ impl Setting {
             Self::Wubi => 49,
             Self::Renderer => 43,
             Self::Font => 44,
+            Self::PunctCommits => 64,
             Self::SystemTextReplacements => 46,
             Self::Fuzzy(index) => FUZZY_TAG_BASE + index as NSInteger,
             Self::DictionaryEnabled(index) => DICTIONARY_ENABLED_TAG_BASE + index as NSInteger,
@@ -272,9 +303,10 @@ impl Setting {
             1 => Self::LearningLanguage,
             2 => Self::PageSize,
             3 => Self::PageKeys,
-            4 => Self::Theme,
+            4 => Self::Appearance,
             43 => Self::Renderer,
             44 => Self::Font,
+            64 => Self::PunctCommits,
             5 => Self::ExpressionKey,
             6 => Self::QuestionKey,
             41 => Self::QuestionMark,
@@ -287,9 +319,16 @@ impl Setting {
             13 => Self::Preedit,
             14 => Self::EnglishCandidates,
             42 => Self::ChineseFirst,
-            57 => Self::AutoSpace,
+            62 => Self::Emoji,
+            63 => Self::EnglishInChinese,
+            65 => Self::AutoSpace,
             50 => Self::ShiftLetter,
-            51 => Self::HorizontalGrid,
+            51 => Self::Theme,
+            57 => Self::HorizontalGrid,
+            58 => Self::CandidateFontSize,
+            59 => Self::AnnotationFontSize,
+            60 => Self::Animations,
+            61 => Self::ResetFontSizes,
             15 => Self::TranslationKeys,
             16 => Self::TranslationSecondKeys,
             17 => Self::TranslateSelectionKeys,
@@ -304,7 +343,7 @@ impl Setting {
             23 => Self::CopyDiagnostics,
             48 => Self::ExportLogs,
             24 => Self::CloudSlots,
-            25 => Self::EnglishCandidatesOffInApps,
+            25 => Self::EnglishCandidatesOnlyInApps,
             26 => Self::DeleteCandidateKeys,
             27 => Self::InputLog,
             45 => Self::Learning,
@@ -352,9 +391,11 @@ mod tests {
             Setting::LearningLanguage,
             Setting::PageSize,
             Setting::PageKeys,
+            Setting::Appearance,
             Setting::Theme,
             Setting::Renderer,
             Setting::Font,
+            Setting::PunctCommits,
             Setting::ExpressionKey,
             Setting::QuestionKey,
             Setting::CloudEnabled,
@@ -379,18 +420,24 @@ mod tests {
             Setting::Wubi,
             Setting::ShuangpinRawPreedit,
             Setting::Traditional,
+            Setting::Emoji,
+            Setting::EnglishInChinese,
             Setting::VerboseLog,
             Setting::OpenLogDirectory,
             Setting::CopyDiagnostics,
             Setting::ExportLogs,
             Setting::CloudSlots,
-            Setting::EnglishCandidatesOffInApps,
+            Setting::EnglishCandidatesOnlyInApps,
             Setting::DeleteCandidateKeys,
             Setting::InputLog,
             Setting::SystemTextReplacements,
             Setting::ShiftLetter,
             Setting::AutoSpace,
             Setting::HorizontalGrid,
+            Setting::CandidateFontSize,
+            Setting::AnnotationFontSize,
+            Setting::Animations,
+            Setting::ResetFontSizes,
             Setting::ClearInputLog,
             Setting::TestCloud,
             Setting::OpenWebsite,
