@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use super::scheme::{Scheme, scheme_label};
 use super::{
-    Appearance, CandidateRenderer, FontSize, LayoutMode, LogLevel, PreeditMode, ShiftLetter,
+    Appearance, CandidateRenderer, EmojiCount, FontSize, LayoutMode, LogLevel, PreeditMode,
+    ShiftLetter,
 };
 
 /// 每页最多几个候选：数字键只有 1–9。
@@ -80,8 +81,9 @@ pub struct GeneralConfig {
     /// 中文模式下整段是英文词或英文词的开头时给英文候选与补全（`hello`、`compa` → company）。关掉中文模式只出中文，英文模式照旧。
     pub english_in_chinese: bool,
 
-    /// 候选后面配 emoji（`kaixin` → 开心 😄）。关掉候选里就只有字词。
-    pub emoji: bool,
+    /// 候选后面一次最多配几个 emoji（`kaixin` → 开心 😄），0 时候选里只有字词。
+    pub emoji: EmojiCount,
+
     /// 中西文混排自动空格：汉字与半角字母 / 数字之间补一个空格（「用 Go 写了 30 行」）。缺省关；目前只有 macOS 用。
     pub auto_space: bool,
 
@@ -173,7 +175,7 @@ impl Default for GeneralConfig {
             traditional: false,
             chinese_first: false,
             english_in_chinese: true,
-            emoji: true,
+            emoji: EmojiCount::default(),
             auto_space: false,
             shift_letter: ShiftLetter::default(),
             english_mode: true,

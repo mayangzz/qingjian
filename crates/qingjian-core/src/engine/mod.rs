@@ -73,7 +73,7 @@ use crate::parser::{self, ParseError, Segmentation};
 use crate::punctuation::Punctuation;
 use crate::ranking::{self, Scored};
 use crate::sentence::{
-    self, Conversion, Interpolation, LanguageModel, NoLanguageModel, Personal, SentenceScorer,
+    self, Conversion, Interpolation, LanguageModel, NoLanguageModel, SentenceScorer,
 };
 use crate::shortcut;
 use crate::shuangpin::Scheme;
@@ -118,9 +118,6 @@ pub struct Engine {
 
     /// 用户定义的固定位置文本。
     custom_phrases: Vec<crate::CustomPhrase>,
-
-    /// 候选后面配不配 emoji（配置 `[general] emoji`，缺省开）；关了 emoji 表照样加载，只是不出候选。
-    emoji_candidates: bool,
 
     /// 中文模式下整段是英文词（或像英文词的开头）时给不给英文候选与补全（配置 `[general] english_in_chinese`，缺省开）。
     english_in_chinese: bool,
@@ -268,6 +265,9 @@ pub struct Engine {
     /// emoji 表，没有就不出 emoji 候选。
     emoji: Option<EmojiTable>,
 
+    /// 每次查询最多插几个 emoji（配置 `[general] emoji`，缺省 3）；0 不出 emoji，表照样加载。
+    emoji_limit: usize,
+
     /// 辅码态：`None` 是拼音态，`Some` 是辅码态（空串 = 刚敲下触发键、码段还没开始）。
     /// 码段不进 `composition`：它与拼音分段记账、分段画（见 [`AuxSegment`]）。
     aux_code: Option<String>,
@@ -406,7 +406,6 @@ impl Engine {
             punctuation: Punctuation::default(),
             full_width_punctuation: true,
             custom_phrases: Vec::new(),
-            emoji_candidates: true,
             english_in_chinese: true,
             chinese_first: false,
             auto_space: false,
@@ -454,6 +453,7 @@ impl Engine {
             code: None,
             phonetic: true,
             emoji: None,
+            emoji_limit: EMOJI_TOTAL,
             aux_code: None,
             aux_enabled: false,
             aux_show: false,

@@ -13,7 +13,7 @@ pub(crate) enum Message {
     ShuangpinRawPreedit(bool),
     Wubi(bool),
     Traditional(bool),
-    Emoji(bool),
+    Emoji(Option<usize>),
     EnglishCandidates(bool),
     EnglishInChinese(bool),
     ChineseFirst(bool),

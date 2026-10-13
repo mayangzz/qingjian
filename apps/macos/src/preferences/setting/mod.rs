@@ -128,7 +128,7 @@ pub enum Setting {
     /// `[general] english_in_chinese`，勾选框：中文模式也给英文词与补全。
     EnglishInChinese,
 
-    /// `[general] emoji`，勾选框：候选后面配 emoji。
+    /// `[general] emoji`，弹出菜单：候选后面一次最多配几个 emoji。
     Emoji,
     /// `[general] auto_space`，勾选框：中西文之间自动补空格。
     AutoSpace,

@@ -22,6 +22,7 @@ TSV 解析、查询与生成工具把 `lue` / `nue` 统一成 `lve` / `nve`。
 
 ## crates/qingjian-core
 
+`Engine::set_emoji_limit` 控制单次查询插入的 emoji 数，范围 0–3，默认 3、0 关闭、越界值按 3 处理；每词最多两个的限制保留，普通候选相对顺序不变。三端读 `[general] emoji`（`qingjian_platform::EmojiCount`，旧配置的 `true` / `false` 读成 3 / 0），CLI 用 `--emoji-limit <0..3>`。
 双拼解码由 `Engine::decode` 传入当前模糊音规则：先取普通合法音节，失败时才保留能由模糊音补成合法音节的声韵组合（如 `suang` → `shuang`）。查询沿用带代价的模糊音展开，上屏沿用原读音与按键的消耗换算；不修改无模糊音时的 `Scheme::decode` 行为。
 
 模块：`composition`（缓冲区与光标；中文模式下 Shift+字母按小写进 `buffer` 参与匹配、大写记在 `shifted`，`typed_text` 还原后用于原样上屏）/ `parser` / `correction`（拼写纠错：整段一处编辑的候选纠正 + `typo` 音节级敲错变体表，后者进整句词图当带代价的边）/

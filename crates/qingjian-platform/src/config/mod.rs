@@ -3,6 +3,7 @@ mod apps;
 mod aux_code;
 mod candidate_renderer;
 mod dictionaries;
+mod emoji_count;
 mod font_size;
 mod general;
 mod highlight_keys;
@@ -38,6 +39,7 @@ pub use apps::{
 pub use aux_code::AuxCodeConfig;
 pub use candidate_renderer::CandidateRenderer;
 pub use dictionaries::{DEFAULT_DOMAINS, DictionariesConfig};
+pub use emoji_count::EmojiCount;
 pub use font_size::FontSize;
 pub use general::{
     DEFAULT_PAGE_KEYS, DEFAULT_THEME, GeneralConfig, LEARNING_LANGUAGE_OFF, MAX_PAGE_SIZE,
@@ -245,8 +247,8 @@ traditional = false
 chinese_first = false
 # 中文模式下整段是英文词或英文词的开头时给英文候选与补全（hello、compa → company）；false 时中文模式只出中文，英文模式不受影响
 english_in_chinese = true
-# 候选后面配 emoji（kaixin → 开心 😄）；false 时候选里只有字词
-emoji = true
+# 候选后面一次最多配几个 emoji（kaixin → 开心 😄），0–3；0 时候选里只有字词
+emoji = 3
 # 中西文之间自动补空格：汉字与半角字母 / 数字相邻时补一个空格，「用Go写了30行」上屏成「用 Go 写了 30 行」。缺省关；只有 macOS 用
 auto_space = false
 # 中文模式下按住 Shift 敲的字母：passthrough 拼音原样上屏、字母交给应用（缺省，与以前一致）/ compose 收进组句

@@ -4,7 +4,7 @@ use objc2::MainThreadMarker;
 use objc2::rc::Retained;
 use objc2_app_kit::{NSButton, NSPopUpButton};
 use qingjian_core::Language;
-use qingjian_platform::{Config, MAX_PAGE_SIZE, Scheme};
+use qingjian_platform::{Config, EmojiCount, MAX_PAGE_SIZE, Scheme};
 
 use crate::preferences::controls::{
     checkbox, language_label, note, row_checkbox, row_popup, select, set_checked,
@@ -31,8 +31,8 @@ pub struct GeneralPage {
     /// 繁体输出模式。
     traditional: Retained<NSButton>,
 
-    /// 候选后面配 emoji。
-    emoji: Retained<NSButton>,
+    /// 候选后面一次最多配几个 emoji。
+    emoji: Retained<NSPopUpButton>,
 
     /// 英文模式也给候选。
     english: Retained<NSButton>,
@@ -151,8 +151,15 @@ impl GeneralPage {
         );
         let traditional = checkbox(mtm, "繁体输出", Setting::Traditional, target);
         row_checkbox(layout, &traditional);
-        let emoji = checkbox(mtm, "候选后面显示 emoji", Setting::Emoji, target);
-        row_checkbox(layout, &emoji);
+        let emoji_titles: Vec<String> = EmojiCount::LABELS.iter().map(|&s| s.to_owned()).collect();
+        let emoji = row_popup(
+            layout,
+            mtm,
+            "候选后面的 emoji",
+            &emoji_titles,
+            Setting::Emoji,
+            target,
+        );
         let english = checkbox(mtm, "英文候选与补全", Setting::EnglishCandidates, target);
         row_checkbox(layout, &english);
         note(
@@ -272,7 +279,7 @@ impl GeneralPage {
         self.shuangpin_raw_preedit
             .setEnabled(general.scheme().is_shuangpin());
         set_checked(&self.traditional, general.traditional);
-        set_checked(&self.emoji, general.emoji);
+        select(&self.emoji, Some(usize::from(general.emoji.get())));
         set_checked(&self.english, general.english_candidates);
         set_checked(
             &self.english_only_in_apps,

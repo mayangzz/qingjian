@@ -225,7 +225,8 @@ impl Router {
         self.engine.set_aux_enabled(config.aux_code.enabled);
         self.engine.set_aux_show(config.general.aux_code_show);
         self.engine.set_chinese_first(config.general.chinese_first);
-        self.engine.set_emoji_candidates(config.general.emoji);
+        self.engine
+            .set_emoji_limit(usize::from(config.general.emoji.get()));
         self.engine
             .set_english_in_chinese(config.general.english_in_chinese);
         self.engine

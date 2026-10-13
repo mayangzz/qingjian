@@ -19,6 +19,25 @@ fn partial_file_keeps_other_defaults() {
 }
 
 #[test]
+fn emoji_reads_counts_and_old_switch() {
+    let emoji = |value: &str| {
+        toml::from_str::<Config>(&format!("[general]\nemoji = {value}\n"))
+            .unwrap()
+            .general
+            .emoji
+            .get()
+    };
+    assert_eq!(emoji("true"), 3);
+    assert_eq!(emoji("false"), 0);
+    assert_eq!(emoji("2"), 2);
+    assert_eq!(emoji("0"), 0);
+    assert_eq!(emoji("9"), 3);
+    assert_eq!(emoji("-1"), 0);
+    assert_eq!(emoji("\"yes\""), 3);
+    assert_eq!(emoji("1.5"), 3);
+}
+
+#[test]
 fn fuzzy_section_parses() {
     let config: Config = toml::from_str("[fuzzy]\nz_zh = true\nan_ang = true\n").unwrap();
     assert!(config.fuzzy.z_zh && config.fuzzy.an_ang && !config.fuzzy.n_l);
@@ -40,7 +59,7 @@ fn general_and_shortcut_sections_parse() {
     assert_eq!(config.general.preedit, PreeditMode::Window);
     assert_eq!(config.general.learning_language, "en");
     assert!(config.general.english_candidates);
-    assert!(config.general.emoji);
+    assert_eq!(config.general.emoji, EmojiCount::new(3));
     assert!(config.general.english_in_chinese);
     assert!(!config.general.traditional);
     assert_eq!(config.general.shuangpin(), None);
