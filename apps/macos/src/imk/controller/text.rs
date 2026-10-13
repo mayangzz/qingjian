@@ -212,17 +212,23 @@ impl QingjianInputController {
                 }
             }
         }
-        // 数字与字母不是标点，直接交给应用；不能走 punctuate：它转不了时清掉上屏记录，自动空格就不知道上文了
-        if c.is_ascii_alphanumeric() {
-            return self.pass_through(c, client);
-        }
+        // 数字与字母的自动空格要在 punctuate 之前判：它转不了时清掉上屏记录，之后就不知道上文了
+        let lead = c.is_ascii_alphanumeric()
+            && host::with(|h| h.engine.auto_space_before(c.encode_utf8(&mut [0; 4])))
+                .unwrap_or(false);
         // 中文模式下的全角标点；转不了的（数字、字母以外的其他键）原样交给应用
         match host::with(|h| h.engine.punctuate(c)).flatten() {
             Some(full_width) => {
                 client.insert_text(full_width);
                 true
             }
-            None => self.pass_through(c, client),
+            None => {
+                host::with(|h| h.engine.note_passthrough(c));
+                if lead {
+                    client.insert_text(&format!(" {c}"));
+                }
+                lead
+            }
         }
     }
 

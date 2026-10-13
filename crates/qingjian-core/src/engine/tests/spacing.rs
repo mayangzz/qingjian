@@ -107,9 +107,8 @@ fn translation_is_spaced_and_becomes_the_context() {
 }
 
 #[test]
-fn inner_spaces_count_toward_backspaces() {
+fn custom_phrase_is_committed_verbatim() {
     let mut engine = spaced_engine();
-    commit_kaifa(&mut engine);
     engine
         .set_custom_phrases(vec![crate::CustomPhrase {
             code: "dk".into(),
@@ -120,12 +119,7 @@ fn inner_spaces_count_toward_backspaces() {
         .unwrap();
     engine.set_input("dk");
     let phrase = engine.query().unwrap().candidates.items[0].clone();
-    assert_eq!(engine.commit(&phrase), "用 docker 部署");
-    // 「用 docker 部署」11 个字符：删 10 个还剩半截，删满 11 个才回到上一条「开发」
-    for _ in 0..10 {
-        engine.note_backspace();
-    }
-    assert!(!engine.auto_space_before("3"));
-    engine.note_backspace();
+    assert_eq!(engine.commit(&phrase), "用docker部署");
+    // 原样上屏的末字照样是上文
     assert!(engine.auto_space_before("3"));
 }

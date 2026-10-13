@@ -273,8 +273,12 @@ impl Engine {
                 | CandidateKind::Cloud
                 | CandidateKind::Sentence
         );
-        // 自动空格补在上屏文本里，退格撤销按补过空格的字数数
-        let text = if self.auto_space {
+        // 自动空格补在上屏文本里，退格撤销按补过空格的字数数；自定义短语与快捷候选是用户 / 规则给定的原文，不改
+        let verbatim = matches!(
+            candidate.kind,
+            CandidateKind::Custom(_) | CandidateKind::Shortcut
+        );
+        let text = if self.auto_space && !verbatim {
             crate::spacing::space_inner(&traditional_text)
         } else {
             traditional_text
