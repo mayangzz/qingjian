@@ -4,7 +4,7 @@ use super::frame::Frame;
 use super::indicator::IndicatorState;
 use super::key::KeyOutcome;
 use super::session::SessionId;
-use crate::config::SwitchKeys;
+use crate::config::{KeyCombo, SwitchKeys};
 
 /// Server 下发给 DLL 的「按键行为」设置。
 ///
@@ -14,6 +14,10 @@ use crate::config::SwitchKeys;
 /// `%APPDATA%\Qingjian` 对 AppContainer 里的商店应用本来也读不到。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct InputSettings {
+    /// 可选标点切换键；Server 下发并由 DLL 热更新 TSF 保留键。
+    #[serde(default)]
+    pub toggle_punctuation: Option<KeyCombo>,
+
     /// 中英切换键（`[shortcut] switch_mode`）。
     pub switch_mode: SwitchKeys,
 
@@ -24,6 +28,10 @@ pub struct InputSettings {
     /// 按住 Shift 敲的字母吃不吃：缺省交给应用，开着时送 Server 起一段组句（`⇧C` 接 `pan` 出「C盘」）。
     #[serde(default)]
     pub shift_letter_compose: bool,
+
+    /// 重连时先取 Server 的模式，避免旧 DLL 状态覆盖初始模式或按应用记忆。
+    #[serde(default)]
+    pub restore_mode: bool,
 
     /// 这个会话的应用里英文模式给不给英文候选（`[general] english_candidates` 与 `[apps]` 白名单
     /// 由 Server 按会话的 exe 名算好）。不给时英文模式与 Caps 下没在组句的字母 DLL 不吃、原样交给应用，
@@ -39,9 +47,11 @@ fn english_candidates_default() -> bool {
 impl Default for InputSettings {
     fn default() -> Self {
         Self {
+            toggle_punctuation: None,
             switch_mode: SwitchKeys::default(),
             english_mode: true,
             shift_letter_compose: false,
+            restore_mode: false,
             english_candidates: true,
         }
     }

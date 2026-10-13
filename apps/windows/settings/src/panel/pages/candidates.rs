@@ -4,21 +4,8 @@ use qingjian_platform::{Appearance, CandidateRenderer, FontSize, LayoutMode, Pre
 use qingjian_render::ThemeLibrary;
 use windows_reactor::*;
 
-use crate::panel::controls::{field, page};
+use crate::panel::controls::{field, mode_combo, page};
 use crate::panel::{Message, Settings};
-
-/// 枚举下拉：按 `label()` 列项，选中 `current`（找不到取 0）。
-fn mode_combo<T: PartialEq + Copy>(
-    all: &'static [T],
-    current: T,
-    label: fn(T) -> &'static str,
-    callback: Callback<Option<usize>>,
-) -> ComboBox {
-    ComboBox::new()
-        .items_source(all.iter().map(|mode| label(*mode)))
-        .selected_index(all.iter().position(|mode| *mode == current).unwrap_or(0))
-        .on_selection_changed(callback)
-}
 
 /// 字号框：不限范围；没设过显示主题的字号（用户知道从哪个数开始调）。
 fn size_box(size: FontSize, theme: Option<f32>, callback: Callback<Option<f64>>) -> NumberBox {

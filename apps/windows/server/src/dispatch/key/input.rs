@@ -1,6 +1,7 @@
 //! 按键怎么作用到 Engine / 高亮上。分流规则与 macOS 壳的 `handle_text` / `handle_command` 对齐。
 
 use qingjian_core::{QUESTION_PREFIX, punctuation, shortcut};
+use qingjian_platform::HighlightKeys;
 use qingjian_platform::protocol::KeyEvent;
 
 use super::{Effect, codes, with_prefix};
@@ -139,14 +140,8 @@ impl Router {
                     Effect::Navigated
                 }
             },
-            codes::DOWN => {
-                self.move_highlight(1);
-                Effect::Navigated
-            }
-            codes::UP => {
-                self.move_highlight(-1);
-                Effect::Navigated
-            }
+            codes::DOWN => self.vertical_key(1),
+            codes::UP => self.vertical_key(-1),
             codes::NEXT => {
                 self.page(1);
                 Effect::Navigated
@@ -155,14 +150,8 @@ impl Router {
                 self.page(-1);
                 Effect::Navigated
             }
-            codes::LEFT => {
-                self.engine.move_cursor_left();
-                Effect::Changed(None)
-            }
-            codes::RIGHT => {
-                self.engine.move_cursor_right();
-                Effect::Changed(None)
-            }
+            codes::LEFT => self.horizontal_key(-1),
+            codes::RIGHT => self.horizontal_key(1),
             codes::HOME => {
                 self.engine.move_cursor_home();
                 Effect::Changed(None)
@@ -172,6 +161,49 @@ impl Router {
                 Effect::Changed(None)
             }
             _ => Effect::Passthrough,
+        }
+    }
+
+    /// `↑` / `↓`：按 `[shortcut] highlight_keys` 移高亮。高亮键配成 `←` / `→` 时它俩没活干，
+    /// 这一下吃掉但不动——不吃掉会漏给应用去挪插入符。
+    fn vertical_key(&mut self, step: isize) -> Effect {
+        if self.config.highlight_keys == HighlightKeys::UpDown {
+            self.move_highlight(step);
+        }
+        Effect::Navigated
+    }
+
+    /// `←` / `→`：缺省只走拼音光标；高亮键配成 `←` / `→` 时两键一起管，把「拼音行 + 候选栏」当成
+    /// 一条从左到右的序列走——拼音行在左边，所以 `→` 先走光标、到末位溢出成选词，`←` 先退候选、到首位回光标。
+    fn horizontal_key(&mut self, step: isize) -> Effect {
+        if self.config.highlight_keys == HighlightKeys::UpDown {
+            self.move_caret(step);
+            return Effect::Changed(None);
+        }
+        if step > 0 {
+            if self.move_caret(1) {
+                return Effect::Changed(None);
+            }
+            self.move_highlight(1);
+            return Effect::Navigated;
+        }
+        if self.highlight > 0 {
+            self.move_highlight(-1);
+            return Effect::Navigated;
+        }
+        // 高亮已在首位：把这一下还给拼音光标；光标也在开头时没有去处，照样吃掉
+        if self.move_caret(-1) {
+            return Effect::Changed(None);
+        }
+        Effect::Navigated
+    }
+
+    /// 拼音光标左右移一格。已在开头 / 末尾时返回 `false`，调用方据此溢出到另一个动作。
+    fn move_caret(&mut self, step: isize) -> bool {
+        if step < 0 {
+            self.engine.move_cursor_left()
+        } else {
+            self.engine.move_cursor_right()
         }
     }
 
@@ -244,15 +276,19 @@ impl Router {
         {
             return Effect::Changed(self.commit_index(index));
         }
+        // 翻页键要排在连字符前面，否则 `-` 永远翻不回上一页；翻不动时 `-` 照旧是单词里的连字符（`well-known`）
+        if composing
+            && let Some(step) = self.page_step(event)
+            && (c != '-' || self.can_page(step))
+        {
+            self.page(step);
+            return Effect::Navigated;
+        }
         if c.is_ascii_alphabetic()
             || (composing && (c.is_ascii_digit() || matches!(c, '_' | '\'' | '-')))
         {
             self.engine.push(c);
             return Effect::Changed(None);
-        }
-        if composing && let Some(step) = codes::page_key(event, self.config.page_keys) {
-            self.page(step);
-            return Effect::Navigated;
         }
         let committed = composing.then(|| {
             if c == ' ' {
@@ -316,7 +352,10 @@ impl Router {
                 return Effect::Changed(None);
             }
         }
-        if let Some(step) = codes::page_key(event, self.config.page_keys) {
+        // `-` `=` 翻不动时落回原字符（与 macOS 一致）；`[` `]` `,` `.` 翻不动照旧吃键，落字会往文档里插标点
+        if let Some(step) = self.page_step(event)
+            && (!matches!(c, '-' | '=') || self.can_page(step))
+        {
             self.page(step);
             return Effect::Navigated;
         }

@@ -5,11 +5,14 @@ mod candidate_renderer;
 mod dictionaries;
 mod font_size;
 mod general;
+mod highlight_keys;
 mod key_combo;
 mod layout_mode;
 mod log_level;
 mod model;
 mod modifiers;
+mod optional_key_combo;
+mod page_keys;
 mod preedit_mode;
 mod scheme;
 mod shift_letter;
@@ -40,11 +43,13 @@ pub use general::{
     DEFAULT_PAGE_KEYS, DEFAULT_THEME, GeneralConfig, LEARNING_LANGUAGE_OFF, MAX_PAGE_SIZE,
     PAGE_KEY_OPTIONS,
 };
+pub use highlight_keys::HighlightKeys;
 pub use key_combo::KeyCombo;
 pub use layout_mode::LayoutMode;
 pub use log_level::LogLevel;
 pub use model::LocalModelConfig;
 pub use modifiers::Modifiers;
+pub use page_keys::PageKeys;
 pub use preedit_mode::PreeditMode;
 pub use scheme::{Scheme, scheme_label, scheme_name};
 pub use shift_letter::ShiftLetter;
@@ -204,7 +209,7 @@ pub const TEMPLATE: &str = concat!(
     r#"# 青简输入法配置。保存后自动生效；也可以在菜单栏的输入法菜单里改。
 
 [general]
-# 学习语言（en 英语 / ja 日语 / es 西班牙语 / off 不显示译文）：候选旁显示哪种语言的译文，要有对应的释义表才生效
+# 学习语言（en 英语 / ja 日语 / es 西班牙语 / de 德语 / off 不显示译文）：候选旁显示哪种语言的译文，要有对应的释义表才生效
 learning_language = "en"
 # 每页候选数（1–9）
 page_size = 9
@@ -250,6 +255,10 @@ shift_letter = "passthrough"
 # 内置英文模式：开着时单击切换键（[shortcut] switch_mode）或 Caps Lock 亮着进英文模式
 # 关掉后青简保持中文模式，切换键与语言栏按钮都不再切过去；要打英文请用系统快捷键（Win+Space）切到别的输入法。只有 Windows 用，macOS 的中英切换是 Caps Lock
 english_mode = true
+# Windows：初始英文；按应用记忆时也用于没有记录的应用
+default_english = false
+# Windows：按应用 exe 名记住中英状态，重启青简后重新使用初始模式
+remember_mode_per_app = false
 # 中文模式下（没在组句时）敲的标点转全角：, . ? ! : ; ( ) 等，数字后面的 . 保持半角。Windows 上悬浮状态条的「，。」格可以点着切；macOS 在偏好设置中选择默认中文标点模式
 full_width_punctuation = true
 # 英文模式下的同一件事，中英各记一份，状态条切的是当前模式那份；只有 Windows 用
@@ -292,6 +301,10 @@ system_text_replacements = true
 # enabled = true    # 是否启用；停用仍保留位置
 
 [shortcut]
+# Windows：切换当前模式的全 / 半角标点；空串禁用，可设为 "ctrl+." 或其他修饰键加字母、数字、句号
+toggle_punctuation = ""
+# Windows：主翻页键之外同时启用的键对，可多选，如 ["[]", ",.", "-="]
+extra_page_keys = []
 # 前缀模式键，只能是 v / u / i 之一且互不相同（这三个字母不是任何拼音音节的开头）
 # 表达式模式：v1+2 出 3，v123 出中文数字
 expression = "v"
@@ -299,6 +312,9 @@ expression = "v"
 question = "u"
 # 没在组句时敲 ? 是否也进问字模式（中英文模式都行，后面跟字母才是问题，跟别的键还原成问号）；false 的话问号就是问号
 question_mark = false
+# 候选高亮由哪对方向键移动：updown 用 ↑ / ↓ 移高亮、← / → 移拼音光标（缺省）；leftright 改用 ← / → 移高亮
+# leftright 时两键把「拼音行 + 候选栏」当成一条从左到右的序列走：→ 到拼音光标末位溢出成选词，← 到候选首位回拼音光标；↑ / ↓ 不做事。只有 Windows 用
+highlight_keys = "updown"
 "#,
     template_shortcut_keys!(),
     r#"

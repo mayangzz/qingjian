@@ -10,7 +10,7 @@ pub use qingjian_platform::protocol::{
     ServerMessage, SessionId,
 };
 pub use qingjian_platform::{
-    AppsConfig, DEFAULT_ENGLISH_CANDIDATES_ON_WINDOWS, PreeditMode, Scheme,
+    AppsConfig, DEFAULT_ENGLISH_CANDIDATES_ON_WINDOWS, HighlightKeys, PreeditMode, Scheme,
 };
 pub use qingjian_render::Mode;
 pub use qingjian_windows_server::dispatch::{

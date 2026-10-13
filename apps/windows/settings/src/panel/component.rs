@@ -1,8 +1,8 @@
 //! 根组件的 Reactor 生命周期：建状态、按消息落盘、画左侧导航 + 当前页。
 
 use qingjian_platform::{
-    Appearance, CandidateRenderer, Config, DEFAULT_ENGLISH_CANDIDATES_ON_WINDOWS, LayoutMode,
-    LogLevel, PreeditMode, ShiftLetter, UpdateChannel,
+    Appearance, CandidateRenderer, Config, DEFAULT_ENGLISH_CANDIDATES_ON_WINDOWS, HighlightKeys,
+    LayoutMode, LogLevel, PreeditMode, ShiftLetter, UpdateChannel,
 };
 use qingjian_render::ThemeLibrary;
 use windows_reactor::*;
@@ -88,6 +88,10 @@ impl Component for Settings {
                 };
                 self.save_array("apps", "english_candidates_on", &list);
             }
+            Message::SystemCtrlSpace(on) => match super::system_hotkey::set_ctrl_space(on) {
+                Ok(()) => self.notice.clear(),
+                Err(error) => self.notice.fail(error),
+            },
             Message::SwitchKey(key, on) => {
                 let keys = self.config.shortcut.switch_mode.with(key, on);
                 let values: Vec<String> =
@@ -95,6 +99,8 @@ impl Component for Settings {
                 self.save_array("shortcut", "switch_mode", &values);
             }
             Message::EnglishMode(on) => self.save("general", "english_mode", on),
+            Message::DefaultEnglish(on) => self.save("general", "default_english", on),
+            Message::RememberModePerApp(on) => self.save("general", "remember_mode_per_app", on),
 
             // 候选窗口页
             Message::Appearance(Some(i)) if i < Appearance::ALL.len() => {
@@ -181,8 +187,21 @@ impl Component for Settings {
             }
 
             // 快捷键页
+            Message::ExtraPageKey(pair, on) => {
+                let values: Vec<String> =
+                    self.config.shortcut.extra_page_keys.with(pair, on).into();
+                self.save_array("shortcut", "extra_page_keys", &values);
+            }
+            Message::TogglePunctuation(on) => self.save(
+                "shortcut",
+                "toggle_punctuation",
+                if on { "ctrl+." } else { "" },
+            ),
             Message::PageKeys(Some(i)) if i < shortcut::PAGE_KEYS.len() => {
                 self.save("general", "page_keys", shortcut::PAGE_KEYS[i].1);
+            }
+            Message::HighlightKeys(Some(i)) if i < HighlightKeys::ALL.len() => {
+                self.save("shortcut", "highlight_keys", HighlightKeys::ALL[i].key());
             }
             Message::ModeExpression(Some(i)) if i < shortcut::MODE_KEYS.len() => {
                 self.save("shortcut", "expression", shortcut::MODE_KEYS[i]);

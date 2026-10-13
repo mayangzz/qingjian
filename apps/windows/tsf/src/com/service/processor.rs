@@ -100,6 +100,9 @@ impl ITfTextInputProcessor_Impl for TextService_Impl {
             && let Ok(keystroke) = thread_mgr.cast::<ITfKeystrokeMgr>()
         {
             self.drop_switch_preserved_key(&keystroke);
+            if let Some(combo) = self.punctuation_combo.take() {
+                preserved::unregister_punctuation(&keystroke, combo);
+            }
             if let Some(combo) = self.translate_combo.take() {
                 preserved::unregister(&keystroke, combo);
             }
@@ -108,6 +111,7 @@ impl ITfTextInputProcessor_Impl for TextService_Impl {
         if let Some(client) = self.engine.borrow_mut().take() {
             let _ = client.close();
         }
+        self.pending_digit.borrow_mut().take();
         self.shared.reset();
         self.shared.take_server_stale();
         self.shared.set_foreground(false);

@@ -4,6 +4,7 @@ mod aux_code;
 mod click;
 mod composing;
 mod english;
+mod highlight;
 mod modes;
 mod rescoring;
 mod shortcuts;

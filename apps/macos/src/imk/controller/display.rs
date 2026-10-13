@@ -202,4 +202,33 @@ impl QingjianInputController {
         }
         true
     }
+
+    /// 翻页键：翻得动就翻页并吃键，返回 `true`。`-` / `=` 在**没有上一页 / 下一页**时返回 `false`，
+    /// 由调用方按普通字符处理 —— 没有上一页时 `-` 就是 `-`（见 `docs/user/getting-started/keys.md`
+    /// 的 `[general] page_keys`）。`fall_through` 为假时（问字模式里按键是问题内容）翻不动也吃键；
+    /// 别的翻页键（`[` `]` `,` `.`）一律吃键 —— 落字会往文档里插标点。非翻页键一律返回 `false`。
+    pub(super) fn page_key(
+        &self,
+        c: char,
+        page_keys: (char, char),
+        fall_through: bool,
+        client: TextClient<'_>,
+    ) -> bool {
+        let step = if c == page_keys.0 {
+            -1
+        } else if c == page_keys.1 {
+            1
+        } else {
+            return false;
+        };
+        // 矩阵展开着时翻页键翻的是整屏，能不能翻交给 `turn_page` 试，`-` / `=` 不在这种情形下落字
+        let (single_row, can) =
+            host::with(|h| (h.session.grid.is_none(), h.session.can_turn_page(step)))
+                .unwrap_or((false, false));
+        if fall_through && single_row && !can && matches!(c, '-' | '=') {
+            return false;
+        }
+        self.turn_page(step, client);
+        true
+    }
 }

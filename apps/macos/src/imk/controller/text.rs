@@ -105,11 +105,9 @@ impl QingjianInputController {
                 self.refresh(client);
                 return true;
             }
-            if composing && c == page_previous {
-                return self.turn_page(-1, client);
-            }
-            if composing && c == page_next {
-                return self.turn_page(1, client);
+            // 翻页键：翻得动就翻页；`=` 没有下一页时按普通字符走（先把英文词原样上屏再交给应用）
+            if composing && self.page_key(c, (page_previous, page_next), true, client) {
+                return true;
             }
             if composing {
                 if c == ' ' {
@@ -199,8 +197,15 @@ impl QingjianInputController {
                     }
                     return true;
                 }
-                c if c == page_previous => return self.turn_page(-1, client),
-                c if c == page_next => return self.turn_page(1, client),
+                // 翻页键：翻得动就翻页；`-` / `=` 翻不动时当普通字符落进英文直输段
+                //（没有上一页时 `-` 就是 `-`，见 docs/user/getting-started/keys.md 的 `[general] page_keys`）
+                c if c == page_previous || c == page_next => {
+                    if !self.page_key(c, (page_previous, page_next), !question, client) {
+                        host::with(|h| h.engine.push(c));
+                        self.refresh(client);
+                    }
+                    return true;
+                }
                 // 其他字符：把当前高亮候选上屏，再按非组句状态处理这个字符
                 _ => {
                     self.commit_highlighted(client);

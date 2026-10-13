@@ -150,6 +150,37 @@ fn tab_with_raw_input_and_no_candidates_is_consumed_without_commit() {
     assert_eq!(result.1, None);
     assert_eq!(result.2.page, 0);
 }
+
+#[test]
+fn all_extra_pairs_page_chinese_candidates_without_committing() {
+    let mut baseline = router(1);
+    let mut router = router(1);
+    router.config.extra_page_keys = vec!["[]".into(), ",.".into(), "-=".into()]
+        .try_into()
+        .unwrap();
+    let normal = KeyModifiers::default();
+    compose(&mut router, "qq", normal);
+    for pair in [('[', ']'), (',', '.'), ('-', '=')] {
+        let next = key(&mut router, pair.1 as u32, Some(pair.1), normal);
+        assert_eq!(
+            (next.0, next.1, next.2.page),
+            (KeyOutcome::Consumed, None, 1)
+        );
+        let previous = key(&mut router, pair.0 as u32, Some(pair.0), normal);
+        assert_eq!(
+            (previous.0, previous.1, previous.2.page),
+            (KeyOutcome::Consumed, None, 0)
+        );
+    }
+    // 清掉额外键后，逗号恢复为原有输入行为。
+    router.config.extra_page_keys = Default::default();
+    compose(&mut baseline, "qq", normal);
+    let expected = key(&mut baseline, 0xBC, Some(','), normal);
+    let actual = key(&mut router, 0xBC, Some(','), normal);
+    assert_eq!((actual.0, actual.1), (expected.0, expected.1));
+    assert_eq!(router.engine.composition(), baseline.engine.composition());
+}
+
 /// 组句中会转全角的标点：先把高亮候选上屏再补标点（`ni,` 出「你，」）；
 /// 半角标点模式下候选照样上屏、标点按半角补。`,` `.` 配成翻页键时翻页优先，不上屏。
 #[test]
@@ -218,4 +249,56 @@ fn punct_commits_off_keeps_punctuation_in_raw_segment() {
         key(&mut router, 0xBC, Some(','), normal).1.as_deref(),
         Some("你，")
     );
+}
+
+/// 英文候选里 `-` `=` 作翻页键：`-` 翻得回上一页；第一页没得翻时 `-` 仍是单词里的连字符。
+#[test]
+fn english_minus_pages_back_and_stays_a_hyphen_on_the_first_page() {
+    let mut router = router(1);
+    router.config.page_keys = ('-', '=');
+    let english = KeyModifiers {
+        english_mode: true,
+        ..Default::default()
+    };
+    compose(&mut router, "hel", english);
+    assert_eq!(key(&mut router, 0xBB, Some('='), english).2.page, 1);
+    let back = key(&mut router, 0xBD, Some('-'), english);
+    assert_eq!(
+        (back.0, back.1, back.2.page),
+        (KeyOutcome::Consumed, None, 0)
+    );
+    assert_eq!(router.engine.composition().text(), "hel");
+    key(&mut router, 0xBD, Some('-'), english);
+    assert_eq!(router.engine.composition().text(), "hel-");
+}
+
+/// 中文组句里 `-` `=` 翻不动时落回原字符进直输段；`[` `]` 翻不动照旧吃键。
+#[test]
+fn chinese_minus_equals_fall_back_to_characters_at_page_edges() {
+    let normal = KeyModifiers::default();
+    let mut r = router(4);
+    r.config.page_keys = ('-', '=');
+    compose(&mut r, "qq", normal);
+    key(&mut r, 0xBD, Some('-'), normal);
+    assert_eq!(r.engine.composition().text(), "qq-");
+
+    let mut r = router(4);
+    r.config.page_keys = ('-', '=');
+    compose(&mut r, "qq", normal);
+    for page in 1..=2 {
+        assert_eq!(key(&mut r, 0xBB, Some('='), normal).2.page, page);
+    }
+    assert_eq!(key(&mut r, 0xBD, Some('-'), normal).2.page, 1);
+    key(&mut r, 0xBB, Some('='), normal);
+    key(&mut r, 0xBB, Some('='), normal);
+    assert_eq!(r.engine.composition().text(), "qq=");
+
+    let mut r = router(4);
+    compose(&mut r, "qq", normal);
+    let result = key(&mut r, 0xDB, Some('['), normal);
+    assert_eq!(
+        (result.0, result.1, result.2.page),
+        (KeyOutcome::Consumed, None, 0)
+    );
+    assert_eq!(r.engine.composition().text(), "qq");
 }
